@@ -8,3 +8,5 @@ target/
 node_modules/
 dist/
 .angular/
+hs_err_pid*.log
+replay_pid*.log
