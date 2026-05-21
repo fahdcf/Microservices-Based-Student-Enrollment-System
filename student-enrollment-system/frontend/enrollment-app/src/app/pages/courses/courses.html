@@ -1,0 +1,69 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Courses</div>
+      <div class="page-subtitle">Manage available courses in the system</div>
+    </div>
+    <button class="btn btn-primary" (click)="showForm = !showForm">
+      {{ showForm ? '✕ Close' : '+ Add Course' }}
+    </button>
+  </div>
+
+  <!-- Add Form -->
+  <div *ngIf="showForm" class="card form-card">
+    <h3 class="form-title">Create New Course</h3>
+    <form #f="ngForm" (ngSubmit)="submit(f)" class="course-form">
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Title</label>
+          <input name="title" [(ngModel)]="formData.title" required placeholder="Course title" />
+        </div>
+        <div class="form-field">
+          <label>Credits (1–10)</label>
+          <input name="credits" [(ngModel)]="formData.credits" required type="number" min="1" max="10" placeholder="4" />
+        </div>
+        <div class="form-field" style="grid-column: 1 / -1">
+          <label>Description</label>
+          <textarea name="description" [(ngModel)]="formData.description" required placeholder="Course description" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="f.invalid">Create Course</button>
+        <button type="button" class="btn btn-outline" (click)="showForm = false">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="error"   class="alert alert-error">&#9888; {{ error }}</div>
+  <div *ngIf="success" class="alert alert-success">✓ {{ success }}</div>
+
+  <div *ngIf="loading" class="spinner-container">Loading...</div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="card table-card">
+    <div *ngIf="courses.length === 0" class="empty-state">
+      <div class="empty-icon">◇</div>
+      <p>No courses created yet.</p>
+    </div>
+    <table *ngIf="courses.length > 0" class="data-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Credits</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of courses">
+          <td>{{ c.title }}</td>
+          <td class="muted">{{ c.description }}</td>
+          <td><span class="badge badge-accent">{{ c.credits }} cr</span></td>
+          <td>
+            <button class="btn btn-danger btn-sm" (click)="delete(c.id)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
