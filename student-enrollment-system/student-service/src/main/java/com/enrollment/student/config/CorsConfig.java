@@ -1,18 +1,9 @@
 package com.enrollment.student.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.*;
 
+// CORS is handled exclusively by the API Gateway (port 8080).
+// Defining it here too would cause duplicate Access-Control-Allow-Origin headers.
 @Configuration
-public class CorsConfig implements WebMvcConfigurer {
-
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOriginPatterns("http://localhost:*")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(false);
-    }
+public class CorsConfig {
 }
