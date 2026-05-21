@@ -26,35 +26,51 @@ export class StudentsComponent implements OnInit {
 
   load() {
     this.loading = true;
+    this.error = '';
     this.studentService.getAll().subscribe({
-      next: (data) => { this.students = data; this.loading = false; },
-      error: () => { this.error = 'Failed to load students.'; this.loading = false; }
+      next: data => { this.students = data; this.loading = false; },
+      error: err => { this.error = this.extractError(err); this.loading = false; }
     });
   }
 
   submit(form: NgForm) {
     if (form.invalid) return;
+    this.error = '';
+    this.success = '';
     this.studentService.create(this.formData).subscribe({
       next: () => {
-        this.success = 'Student registered successfully!';
-        this.error = '';
+        this.success = `Student ${this.formData.cnie} registered successfully!`;
         this.showForm = false;
         form.reset();
         this.formData = { cnie: '', firstName: '', lastName: '', email: '' };
         this.load();
+        setTimeout(() => this.success = '', 4000);
       },
-      error: (err) => {
-        this.error = err.error?.error || 'Failed to create student.';
-        this.success = '';
+      error: err => {
+        this.error = this.extractError(err);
       }
     });
   }
 
-  delete(id: number) {
-    if (!confirm('Delete this student?')) return;
+  delete(id: number, cnie: string) {
+    if (!confirm(`Delete student ${cnie}? This cannot be undone.`)) return;
+    this.error = '';
     this.studentService.delete(id).subscribe({
-      next: () => this.load(),
-      error: (err) => this.error = err.error?.error || 'Cannot delete student.'
+      next: () => {
+        this.success = `Student ${cnie} deleted.`;
+        this.load();
+        setTimeout(() => this.success = '', 3000);
+      },
+      error: err => this.error = this.extractError(err)
     });
+  }
+
+  private extractError(err: any): string {
+    if (!err?.error) return `Request failed (HTTP ${err?.status ?? 'unknown'}).`;
+    if (typeof err.error === 'string') return err.error;
+    if (err.error?.error) return err.error.error;
+    const entries = Object.entries(err.error);
+    if (entries.length) return entries.map(([k, v]) => `${k}: ${v}`).join(' | ');
+    return `Unexpected error (HTTP ${err.status}).`;
   }
 }

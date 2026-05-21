@@ -16,6 +16,7 @@ import { Enrollment } from '../../models/enrollment.model';
 export class DashboardComponent implements OnInit {
   totalStudents = 0;
   totalCourses = 0;
+  statsError = '';
 
   searchCnie = '';
   enrollments: Enrollment[] = [];
@@ -30,8 +31,14 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.studentService.getAll().subscribe(s => this.totalStudents = s.length);
-    this.courseService.getAll().subscribe(c => this.totalCourses = c.length);
+    this.studentService.getAll().subscribe({
+      next: s => this.totalStudents = s.length,
+      error: () => this.statsError = 'Could not reach backend. Make sure all services are running.'
+    });
+    this.courseService.getAll().subscribe({
+      next: c => this.totalCourses = c.length,
+      error: () => {}
+    });
   }
 
   search() {
@@ -39,16 +46,16 @@ export class DashboardComponent implements OnInit {
     this.loading = true;
     this.error = '';
     this.searched = false;
+    this.enrollments = [];
 
     this.enrollmentService.getByStudentCnie(this.searchCnie.trim()).subscribe({
-      next: (data) => {
+      next: data => {
         this.enrollments = data;
         this.searched = true;
         this.loading = false;
       },
-      error: (err) => {
-        this.error = err.error?.error || 'Student not found.';
-        this.enrollments = [];
+      error: err => {
+        this.error = this.extractError(err);
         this.searched = true;
         this.loading = false;
       }
@@ -56,12 +63,13 @@ export class DashboardComponent implements OnInit {
   }
 
   cancel(enrollmentId: number) {
+    this.error = '';
     this.enrollmentService.cancel(enrollmentId).subscribe({
       next: () => {
         this.enrollments = this.enrollments.filter(e => e.enrollmentId !== enrollmentId);
       },
-      error: (err) => {
-        this.error = err.error?.error || 'Cannot cancel enrollment.';
+      error: err => {
+        this.error = this.extractError(err);
       }
     });
   }
@@ -71,5 +79,14 @@ export class DashboardComponent implements OnInit {
       year: 'numeric', month: 'short', day: 'numeric',
       hour: '2-digit', minute: '2-digit'
     });
+  }
+
+  private extractError(err: any): string {
+    if (!err?.error) return `Request failed (HTTP ${err?.status ?? 'unknown'}).`;
+    if (typeof err.error === 'string') return err.error;
+    if (err.error?.error) return err.error.error;
+    const entries = Object.entries(err.error);
+    if (entries.length) return entries.map(([k, v]) => `${k}: ${v}`).join(' | ');
+    return `Unexpected error (HTTP ${err.status}).`;
   }
 }
