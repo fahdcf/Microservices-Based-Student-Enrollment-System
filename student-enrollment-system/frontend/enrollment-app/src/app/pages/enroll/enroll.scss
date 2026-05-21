@@ -1,0 +1,70 @@
+.enroll-page { padding: 3rem 2.5rem; }
+
+.enroll-layout {
+  max-width: 960px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+
+  @media (max-width: 700px) { grid-template-columns: 1fr; }
+}
+
+.enroll-form-col { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.course-preview {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .cp-title { font-family: var(--font-display); font-weight: 700; }
+  .cp-desc  { font-size: 0.85rem; color: var(--muted); }
+}
+
+.enroll-btn { width: 100%; justify-content: center; padding: 14px; font-size: 0.95rem; }
+
+.result-card {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.result-check {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: rgba(0, 212, 170, 0.15);
+  border: 2px solid var(--accent-2);
+  color: var(--accent-2);
+  font-size: 1.75rem;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.result-title { font-family: var(--font-display); font-size: 1.3rem; }
+
+.result-detail {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  font-size: 0.9rem;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+
+  &:last-of-type { border-bottom: none; }
+
+  .rd-label { color: var(--muted); flex: 1; text-align: left; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+}

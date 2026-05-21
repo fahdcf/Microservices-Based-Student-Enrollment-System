@@ -1,0 +1,66 @@
+<div class="enroll-page">
+  <div class="enroll-layout">
+
+    <!-- Left: form -->
+    <div class="enroll-form-col">
+      <div class="page-header">
+        <div class="page-title">Enroll in a Course</div>
+        <div class="page-subtitle">Select a course and enter your CNIE to register</div>
+      </div>
+
+      <div class="card">
+        <div class="form-field" style="margin-bottom:1.25rem">
+          <label>Your CNIE</label>
+          <input type="text" [(ngModel)]="studentCnie" placeholder="e.g. CD2387" />
+        </div>
+
+        <div class="form-field" style="margin-bottom:1.5rem">
+          <label>Select Course</label>
+          <select [(ngModel)]="selectedCourseId">
+            <option [ngValue]="null" disabled>-- Choose a course --</option>
+            <option *ngFor="let c of courses" [ngValue]="c.id">
+              {{ c.title }} ({{ c.credits }} credits)
+            </option>
+          </select>
+        </div>
+
+        <!-- Selected course preview -->
+        <div *ngIf="getSelectedCourse() as course" class="course-preview">
+          <div class="cp-title">{{ course.title }}</div>
+          <div class="cp-desc">{{ course.description }}</div>
+          <span class="badge badge-accent">{{ course.credits }} credits</span>
+        </div>
+
+        <button
+          class="btn btn-primary enroll-btn"
+          [disabled]="!studentCnie || !selectedCourseId || loading"
+          (click)="enroll()"
+        >
+          {{ loading ? 'Enrolling...' : '◉ Confirm Enrollment' }}
+        </button>
+
+        <div *ngIf="error"   class="alert alert-error"   style="margin-top:1rem">&#9888; {{ error }}</div>
+        <div *ngIf="success" class="alert alert-success" style="margin-top:1rem">✓ {{ success }}</div>
+      </div>
+    </div>
+
+    <!-- Right: result -->
+    <div class="enroll-result-col" *ngIf="result">
+      <div class="result-card card">
+        <div class="result-check">✓</div>
+        <h3 class="result-title">Enrolled Successfully</h3>
+        <div class="result-detail"><span class="rd-label">CNIE</span> <span>{{ result.studentCnie }}</span></div>
+        <div class="result-detail"><span class="rd-label">Course</span> <span>{{ result.courseName }}</span></div>
+        <div class="result-detail"><span class="rd-label">Credits</span> <span>{{ result.courseCredits }}</span></div>
+        <div class="result-detail">
+          <span class="rd-label">Cancellable until</span>
+          <span>24h from enrollment</span>
+        </div>
+        <span [class]="result.deletable ? 'badge badge-success' : 'badge badge-danger'">
+          {{ result.deletable ? 'Cancellation open' : 'Window closed' }}
+        </span>
+      </div>
+    </div>
+
+  </div>
+</div>
