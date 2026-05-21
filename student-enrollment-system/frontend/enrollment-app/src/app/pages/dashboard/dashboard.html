@@ -1,0 +1,79 @@
+<div class="dashboard-page">
+
+  <!-- Hero Stats -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">Student Dashboard</h1>
+      <p class="hero-sub">Track enrollments, manage your academic journey</p>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-value">{{ totalStudents }}</div>
+          <div class="stat-label">Total Students</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ totalCourses }}</div>
+          <div class="stat-label">Available Courses</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lookup -->
+  <section class="lookup-section">
+    <div class="lookup-card card">
+      <div class="page-header">
+        <div class="page-title">My Enrollments</div>
+        <div class="page-subtitle">Enter your CNIE to view your enrolled courses</div>
+      </div>
+
+      <div class="search-row">
+        <div class="form-field" style="flex:1">
+          <label>Student CNIE</label>
+          <input
+            type="text"
+            [(ngModel)]="searchCnie"
+            placeholder="e.g. CD2387"
+            (keyup.enter)="search()"
+          />
+        </div>
+        <button class="btn btn-primary search-btn" (click)="search()" [disabled]="loading">
+          <span *ngIf="!loading">Search</span>
+          <span *ngIf="loading">Loading...</span>
+        </button>
+      </div>
+
+      <div *ngIf="error" class="alert alert-error" style="margin-top:1rem">&#9888; {{ error }}</div>
+
+      <!-- Results -->
+      <div *ngIf="searched && !loading" class="results">
+        <div *ngIf="enrollments.length === 0 && !error" class="empty-state">
+          <div class="empty-icon">◇</div>
+          <p>No enrollments found for <strong>{{ searchCnie }}</strong></p>
+        </div>
+
+        <div *ngIf="enrollments.length > 0" class="enrollments-grid">
+          <div *ngFor="let e of enrollments" class="enrollment-card">
+            <div class="ec-header">
+              <div class="ec-course">{{ e.courseName }}</div>
+              <span [class]="e.deletable ? 'badge badge-success' : 'badge badge-danger'">
+                {{ e.deletable ? '✓ Cancellable' : '✗ Locked' }}
+              </span>
+            </div>
+            <div class="ec-meta">
+              <span class="badge badge-accent">{{ e.courseCredits }} credits</span>
+              <span class="ec-date">{{ formatDate(e.enrollmentDate) }}</span>
+            </div>
+            <button
+              class="btn btn-danger ec-cancel"
+              [disabled]="!e.deletable"
+              (click)="cancel(e.enrollmentId)"
+            >
+              Cancel Enrollment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

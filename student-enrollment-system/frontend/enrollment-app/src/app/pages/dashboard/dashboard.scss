@@ -1,0 +1,96 @@
+.dashboard-page { padding-bottom: 4rem; }
+
+.hero {
+  position: relative;
+  padding: 5rem 2.5rem 4rem;
+  overflow: hidden;
+  text-align: center;
+
+  .hero-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(108,99,255,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-content { position: relative; max-width: 700px; margin: 0 auto; }
+
+  .hero-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub { color: var(--muted); margin-top: 0.5rem; font-size: 1rem; }
+}
+
+.stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 3rem;
+  text-align: center;
+  min-width: 160px;
+  transition: all 0.3s;
+  &:hover { border-color: var(--accent); box-shadow: var(--shadow-glow); }
+
+  .stat-value { font-family: var(--font-display); font-size: 2.5rem; font-weight: 800; color: var(--accent); }
+  .stat-label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+}
+
+.lookup-section { padding: 0 2.5rem; max-width: 900px; margin: 0 auto; }
+
+.search-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  .search-btn { height: 46px; white-space: nowrap; }
+}
+
+.results { margin-top: 2rem; }
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--muted);
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; }
+}
+
+.enrollments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.enrollment-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.25s;
+  &:hover { border-color: var(--accent); }
+
+  .ec-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .ec-course { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; }
+  .ec-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ec-date { font-size: 0.8rem; color: var(--muted); }
+  .ec-cancel { align-self: flex-start; }
+}
