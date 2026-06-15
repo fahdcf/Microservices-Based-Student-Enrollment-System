@@ -1,5 +1,6 @@
 package com.enrollment.student.service;
 
+import com.enrollment.student.client.EnrollmentClient;
 import com.enrollment.student.dto.*;
 import com.enrollment.student.entity.Student;
 import com.enrollment.student.mapper.StudentMapper;
@@ -15,6 +16,7 @@ public class StudentService {
 
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
+    private final EnrollmentClient enrollmentClient;
 
     public StudentResponse createStudent(StudentRequest request) {
         if (studentRepository.existsByCnie(request.getCnie())) {
@@ -50,6 +52,7 @@ public class StudentService {
         if (!studentRepository.existsById(id)) {
             throw new IllegalArgumentException("Student not found with id: " + id);
         }
+        enrollmentClient.deleteEnrollmentsByStudentId(id);
         studentRepository.deleteById(id);
     }
 }

@@ -69,6 +69,11 @@ public class EnrollmentService {
         enrollmentRepository.deleteById(enrollmentId);
     }
 
+    public void deleteEnrollmentsByStudentId(Long studentId) {
+        List<Enrollment> enrollments = enrollmentRepository.findByStudentId(studentId);
+        enrollmentRepository.deleteAll(enrollments);
+    }
+
     private boolean isDeletable(LocalDateTime enrollmentDate) {
         return LocalDateTime.now().isBefore(enrollmentDate.plusHours(CANCELLATION_WINDOW_HOURS));
     }
