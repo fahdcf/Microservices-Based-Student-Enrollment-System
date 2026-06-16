@@ -16,6 +16,8 @@ public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
 
+  
+
     @PostMapping
     public ResponseEntity<EnrollmentResponseDTO> enroll(@Valid @RequestBody EnrollmentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(enrollmentService.enrollStudent(request));
