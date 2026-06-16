@@ -1,17 +1,15 @@
-<nav class="navbar">
-  <div class="nav-brand">
-    <span class="brand-icon">⬡</span>
-    <span class="brand-name">EduEnroll</span>
+<header class="topbar">
+  <div class="search-container">
+    <span class="search-icon">⚲</span>
+    <input type="text" placeholder="Search students, courses..." class="search-input">
   </div>
-  <div class="nav-links">
-    <a
-      *ngFor="let item of navItems"
-      [routerLink]="item.path"
-      routerLinkActive="active"
-      class="nav-link"
-    >
-      <span class="nav-icon">{{ item.icon }}</span>
-      <span>{{ item.label }}</span>
-    </a>
+  
+  <div class="topbar-actions">
+    <button class="action-btn">
+      <span class="icon">⍾</span>
+    </button>
+    <button class="action-btn">
+      <span class="icon">⚙</span>
+    </button>
   </div>
-</nav>
+</header>

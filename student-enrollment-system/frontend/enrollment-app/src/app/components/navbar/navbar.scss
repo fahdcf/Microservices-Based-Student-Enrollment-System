@@ -1,56 +1,81 @@
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
+.topbar {
+  height: 72px;
+  padding: 0 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2.5rem;
-  height: 64px;
-  background: rgba(10, 14, 26, 0.85);
-  backdrop-filter: blur(20px);
+  background: rgba(10, 14, 26, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 
-  .nav-brand {
+  .search-container {
     display: flex;
     align-items: center;
-    gap: 10px;
-    text-decoration: none;
-    color: var(--text);
-
-    .brand-icon {
-      font-size: 1.5rem;
-      color: var(--accent);
-    }
-    .brand-name {
-      font-family: var(--font-display);
-      font-size: 1.2rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-  }
-
-  .nav-links {
-    display: flex;
-    gap: 4px;
-  }
-
-  .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
     padding: 8px 16px;
-    border-radius: var(--radius);
-    text-decoration: none;
-    color: var(--muted);
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
+    width: 320px;
+    transition: all 0.3s ease;
 
-    .nav-icon { font-size: 0.9rem; }
+    &:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+      width: 360px;
+    }
 
-    &:hover { color: var(--text); background: var(--surface); }
-    &.active { color: var(--accent); background: var(--accent-soft); }
+    .search-icon {
+      color: var(--muted);
+      margin-right: 8px;
+      font-size: 1.2rem;
+      transform: rotate(-45deg);
+    }
+
+    .search-input {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      outline: none;
+      width: 100%;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+
+      &::placeholder {
+        color: var(--muted);
+      }
+    }
+  }
+
+  .topbar-actions {
+    display: flex;
+    gap: 12px;
+
+    .action-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--surface-2);
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .icon {
+        font-size: 1.2rem;
+      }
+    }
   }
 }

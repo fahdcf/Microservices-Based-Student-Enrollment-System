@@ -140,6 +140,9 @@ h1, h2, h3, h4 {
 
 .page-header {
   margin-bottom: 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
   .page-title {
     font-size: 2rem;
@@ -174,6 +177,42 @@ h1, h2, h3, h4 {
   justify-content: center;
   align-items: center;
   padding: 3rem;
+}
+
+// ── Tables ───────────────────────────────────────────────────────
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-family: var(--font-body);
+
+  th, td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  tbody tr {
+    transition: background 0.2s ease;
+    &:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  .muted {
+    color: var(--muted);
+  }
 }
 
 // ── Scrollbar ────────────────────────────────────────────────────
