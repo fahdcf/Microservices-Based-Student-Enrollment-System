@@ -94,7 +94,7 @@ Because microservices are RAM intensive, starting all 5 Java services normally m
 To run the whole suite perfectly:
 
 ### Step 1: Database Setup
-Ensure PostgreSQL natively running on port `5432` with password `fahd`.
+Ensure PostgreSQL is running on port `5432`. Set `DB_PASSWORD` (and `DB_USERNAME` if different from `postgres`) in the environment of every database-backed service. Use your own local password; see the root `SECURITY_SETUP.md`.
 Run these commands in `psql` to prepare the databases:
 ```sql
 CREATE DATABASE student_db;

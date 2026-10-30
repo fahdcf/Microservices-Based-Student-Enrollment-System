@@ -10,3 +10,21 @@ dist/
 .angular/
 hs_err_pid*.log
 replay_pid*.log
+
+# Private configuration and generated development artifacts
+.env
+.env.*
+!.env.example
+AGENTS.md
+agents.md
+AGENT.md
+agent.md
+Claude.md
+CLAUDE.md
+claude.md
+*.log
+*.pid
+*.bak
+__pycache__/
+*.py[cod]
+/tasks.md
