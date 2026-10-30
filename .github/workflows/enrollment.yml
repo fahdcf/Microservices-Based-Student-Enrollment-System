@@ -1,0 +1,35 @@
+name: Enrollment checks
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: student-enrollment-system
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: enrollment_test
+          POSTGRES_PASSWORD: local-test-password
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U enrollment_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASES: 'true'
+      TEST_DB_PASSWORD: local-test-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17', cache: maven}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: student-enrollment-system/frontend/enrollment-app/package-lock.json
+      - run: psql -h 127.0.0.1 -p 55432 -U enrollment_test -d postgres -f scripts/test-databases.sql
+        env: {PGPASSWORD: local-test-password}
+      - run: mvn -B -ntp clean verify
+      - run: npm ci --no-audit --no-fund && npm test -- --watch=false && npm run build
+        working-directory: student-enrollment-system/frontend/enrollment-app

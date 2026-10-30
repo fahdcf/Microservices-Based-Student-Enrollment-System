@@ -1,136 +1,156 @@
-# Microservices-Based Student Enrollment System
+# Student Enrollment System
 
-Welcome to the definitive guide for the **Student Enrollment System**. This project is a complete, full-stack, distributed microservices application built with **Spring Boot 3** and **Angular 18**. 
+An academic application with three independently running Spring MVC services, an Angular UI, Spring Cloud Gateway and Eureka. The implementation targets **Java 17**, **Spring Boot 3.4.1**, **Spring Cloud 2024.0.1**, **Angular 21.2**, and **PostgreSQL 17**. Maven can also run on Java 21; Node 20.19+ or 22.12+ is required.
 
-I designed this project to handle university-style course registrations while strictly enforcing business rules (like course capacity limits and cancellation validation). By adopting a microservice architecture, every domain (Students, Courses, and Enrollments) remains isolated, independently scalable, and maintains its own database.
+## Architecture
 
----
-
-## 🏗️ Architecture & Technologies
-
-### Backend Stack
-*   **Java 17 & Spring Boot 3.4.1**: Core framework for all services.
-*   **Spring Cloud Netflix Eureka**: Service Registry and Discovery.
-*   **Spring Cloud Gateway**: Single entry point / Edge server routing traffic.
-*   **Spring Data JPA & Hibernate**: ORM mapping and data persistence.
-*   **PostgreSQL 17**: Relational databases for the microservices.
-*   **Spring WebFlux (WebClient)**: For reactive/synchronous inter-service communication.
-
-### Frontend Stack
-*   **Angular 18**: Component-based Single Page Application (SPA).
-*   **SCSS**: Custom design system featuring CSS variables, flexbox, and CSS Grids.
-
----
-
-## 🗺️ System Blueprint
-
-The environment consists of **5 Java Services** and **1 Angular Application**.
-
-| Component | Port | Database | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Eureka Server** | `8761` | *None* | Service Registry. All backend microservices register themselves here on startup. |
-| **API Gateway** | `8080` | *None* | The edge layer. The frontend only talks to `8080`. Gateway routes `/api/students/**` to 8081, `/api/courses/**` to 8082, etc. |
-| **Student Service** | `8081` | `student_db` | Manages `Student` entities (ID, Name, CNIE). Provides basic CRUD APIs. |
-| **Course Service** | `8082` | `course_db` | Manages `Course` entities (ID, Title, Description, Credits). Provides basic CRUD APIs. |
-| **Enrollment Service** | `8083` | `enrollment_db` | The core business logic orchestrator orchestrating rules and relationships. |
-| **Frontend App** | `4200` | *None* | The user interface. |
-
----
-
-## 🧠 Deep Dive: How the Code Works
-
-### 1. Database Isolation (Database-per-service pattern)
-I implemented a strict database-per-service architecture. `student-service`, `course-service`, and `enrollment-service` never talk to each other's databases directly. 
-*   **Configuration**: Inside each service's `src/main/resources/application.properties`, you will see `spring.datasource.url=jdbc:postgresql://localhost:5432/<db_name>`. 
-*   **Auto-DDL**: I use `spring.jpa.hibernate.ddl-auto=update` so the tables auto-generate upon startup.
-
-### 2. Inter-Service Communication
-The `enrollment-service` is the brains of the operation. Before a student can enroll in a course, the service must verify that:
-1. The student exists.
-2. The course exists.
-
-To achieve this, I built **WebClient API Clients** inside the `enrollment-service`:
-*   `StudentClient.java`: Makes an HTTP GET request to `http://student-service/api/students/cnie/{cnie}`.
-*   `CourseClient.java`: Makes an HTTP GET request to `http://course-service/api/courses/{id}`.
-*Notice it uses the logical names (`student-service`) rather than physical localhost IPs because Eureka handles the discovery!*
-
-### 3. Business Logic Execution
-Open `EnrollmentService.java` inside `enrollment-service` to see the core rules:
-*   **Rule 1: Course Cap (Max 3 Students)**
-    When an enrollment is requested, the code queries `enrollmentRepository.countByCourseId(courseId)`. If this is `>= 3`, a custom `CourseFullException` is thrown and caught by the GlobalExceptionHandler to return a clean 400 Bad Request.
-*   **Rule 2: The 24-Hour Cancellation Window**
-    When a student attempts to un-enroll, I calculate the time elapsed using Java's `LocalDateTime`. If `ChronoUnit.HOURS.between(enrollment.getEnrollmentDate(), now) > 24`, the system throws an exception blocking the drop.
-
-### 4. The Frontend (`frontend/enrollment-app`)
-The Angular application provides a seamless dashboard.
-*   **Models**: Under `src/app/models/`, I mapped TypeScript interfaces directly to the Java DTOs (`StudentResponse`, `CourseResponse`, `EnrollmentResponse`).
-*   **Services**: The `src/app/services/` logic uses Angular's `HttpClient` to speak *only* to the `http://localhost:8080/api/...` endpoint (API Gateway). The UI has no idea the other microservices exist.
-*   **Pages**:
-    *   `students/` and `courses/`: Maintain basic data entry.
-    *   `enroll/`: This component aggregates data. It fetches all courses, lets you input a CNIE, pushes to the enrollment API, and has customized dynamic CSS (utilizing `flexbox`) to perfectly center the success confirmation card.
-
----
-
-## 📂 Project Structure
-
-```text
-student-enrollment-system
-â”œâ”€â”€ api-gateway/            # Spring Cloud Gateway (Routes backend traffic)
-â”œâ”€â”€ course-service/         # Course bounded context (Entity, Repo, Service, Controller)
-â”œâ”€â”€ enrollment-service/     # Enrollment domain + WebClients + Business Logic
-â”œâ”€â”€ eureka-server/          # Service Registry
-â”œâ”€â”€ frontend/               
-â”‚   â””â”€â”€ enrollment-app/     # Angular 18 Dashboard application
-â”œâ”€â”€ student-service/        # Student bounded context
-â””â”€â”€ README.md               # You are here!
+```mermaid
+flowchart LR
+    A[Angular] --> G[API Gateway]
+    G --> S[Student Service]
+    G --> C[Course Service]
+    G --> E[Enrollment Service]
+    E -->|REST with bearer token| S
+    E -->|REST with bearer token| C
+    S --> SD[(student_db)]
+    C --> CD[(course_db)]
+    E --> ED[(enrollment_db)]
+    R[Eureka registry] -. discovery .-> G
+    R -. discovery .-> E
+    R -. discovery .-> S
+    R -. discovery .-> C
 ```
 
----
+| Component | Local port | Responsibility |
+| --- | --- | --- |
+| Eureka | 8761 | Registers service instances so callers resolve service names rather than fixed ports |
+| Gateway | 8080 | Routes /api/students and /api/auth to Student, /api/courses to Course, /api/enrollments to Enrollment; handles browser CORS |
+| Student | 8081 | Academic profiles, separate login accounts, password checking and JWT issuance |
+| Course | 8082 | Course catalogue, credits and CRUD |
+| Enrollment | 8083 | Student/course references, capacity, duplicates, cancellation and deletion guards |
+| Angular | 4200 | Existing dashboard, student/course management, enrollment and sign-in screens |
 
-## 🚀 How to Run the Project Locally
+Each service uses Controller → Service → Repository → its own database. No service queries another service's database. Gateway routes use `lb://service-name`; synchronous `RestClient` builders use Spring Cloud LoadBalancer. Eureka therefore participates in both edge routing and internal calls. Gateway does not expose the internal reference-closing endpoints.
 
-Because microservices are RAM intensive, starting all 5 Java services normally might crash your OS with an `insufficient memory` (malloc) error, generating a `hs_err_pid*.log` file. 
+## Enrollment rules and request flow
 
-To run the whole suite perfectly:
+1. Angular submits a CNIE and course ID to Gateway with a bearer token.
+2. Gateway discovers Enrollment Service through Eureka and forwards the request.
+3. `EnrollmentService.enrollStudent` checks ownership, resolves the student, and locks the student's reference followed by the course's reference.
+4. It rechecks the student and fetches the course through REST, rejecting missing resources with 404 and unavailable/invalid dependencies with 503.
+5. In the same PostgreSQL transaction it rejects a duplicate or a course with **three** enrollments (409), then inserts the enrollment.
+6. The transaction commits before returning 201. PostgreSQL releases the locks.
 
-### Step 1: Database Setup
-Ensure PostgreSQL natively running on port `5432` with password `fahd`.
-Run these commands in `psql` to prepare the databases:
-```sql
-CREATE DATABASE student_db;
-CREATE DATABASE course_db;
-CREATE DATABASE enrollment_db;
+`ReferenceGuard` creates stable rows with INSERT … ON CONFLICT DO NOTHING and locks them using SELECT … FOR UPDATE. The course row serializes capacity checks across service instances. A unique database index independently prevents duplicate student/course pairs. Transactions alone would not protect a count followed by an insert.
+
+Cancellation deletes the enrollment, freeing its seat. It is allowed strictly **before** enrollment time + 24 hours; exactly 24 hours is rejected. Enrollment timestamps use UTC `Instant` and an injectable `Clock`. Cancellation locks the enrollment so a second cancellation returns 404. Administrators follow the same cancellation window.
+
+## Deletion policy
+
+Deleting a student or course first calls Enrollment Service to close that reference. In one Enrollment database transaction, it locks the same reference row used by enrollment creation, checks for active enrollments, and either rolls back with 409 or commits a permanent closed flag. Only then does the owner service delete its own record.
+
+A concurrent enrollment either commits first (deletion gets 409) or sees the closed flag (enrollment gets 409). Both domain services require Enrollment Service to be reachable; failures return 503 and prevent local deletion. Student deletion removes its authentication account through a **local** foreign key; academic profiles and accounts are separate tables.
+
+This is **not an atomic cross-service transaction**. A timeout after closing, a crash, or a local deletion failure can leave an existing profile/course closed for enrollment. Retry its DELETE as an administrator; closing is idempotent. References are never automatically reopened because an old deletion attempt could still complete. Do not reset IDs, restore only one database, bypass the APIs, or remove closed rows without reconciling all three databases.
+
+## Authentication and authorization
+
+Student Service stores BCrypt password hashes in `user_accounts`. On first startup it provisions one administrator from `ADMIN_USERNAME` and `ADMIN_PASSWORD` (12–72 characters). Subsequent starts do not reset that password.
+
+An administrator creates an academic profile and then provisions a STUDENT login linked by student ID, through the Students screen or POST /api/auth/accounts. There is no public registration or role selection. CNIE is immutable through profile updates, preserving the account relationship.
+
+POST /api/auth/login issues a **15-minute HS256 JWT** with issuer, audience, expiry, roles and linked student ID/CNIE. All three domain services independently validate its signature, issuer, audience and expiry using Spring Security OAuth2 Resource Server. Protected controller/service methods use `@PreAuthorize`; cancellation also checks the stored student ID. Internal REST calls forward the caller's token, so they do not impersonate administrators.
+
+| Operation | ADMIN | STUDENT |
+| --- | --- | --- |
+| Browse courses | Yes | Yes |
+| Create/update/delete profiles or courses | Yes | No |
+| List all students | Yes | No |
+| Read a student profile | Any | Own only |
+| Provision student accounts | Yes | No |
+| Create/list/cancel enrollments | Any, subject to business rules | Own only |
+| Close deletion references | Yes | No |
+
+Angular keeps tokens **in memory**, attaches them only to /api requests, and returns to sign-in on 401. Reloading the page requires signing in again. Server authorization is enforced even when calling a domain service directly.
+
+The shared signing secret is a deliberate small-project trust boundary: all three services must be trusted, since possession of the HMAC secret permits token signing. Store it outside Git and use HTTPS outside localhost. Logout clears the browser token but does not revoke an already issued token. Account deletion/role changes do not instantly revoke tokens; authorization claims remain usable until expiry (plus Spring Security's default 60-second clock tolerance). There is no refresh token, password-reset flow, brute-force protection or user-role management UI. Eureka is private development infrastructure, not a public authenticated service.
+
+## API overview
+
+| API | Methods |
+| --- | --- |
+| /api/auth/login | POST {username, password} |
+| /api/auth/accounts | POST {username, password, studentId}, administrator only; role is always STUDENT |
+| /api/students | GET, POST {cnie, firstName, lastName, email} |
+| /api/students/{id} | GET, PUT with the same profile fields, DELETE |
+| /api/students/cnie/{cnie} | GET |
+| /api/courses | GET, POST {title, description, credits} |
+| /api/courses/{id} | GET, PUT with course fields, DELETE |
+| /api/enrollments | POST {studentCnie, courseId} |
+| /api/enrollments/student/{cnie} | GET |
+| /api/enrollments/{id} | DELETE (within the cancellation window) |
+
+Responses use 400 for invalid input, 401 for absent/invalid credentials, 403 for denied permissions, 404 for missing records, 409 for business/uniqueness conflicts and 503 for unavailable dependencies. Unexpected failures return generic 500 responses. Validation returns field messages; business errors return `{"error":"…"}`.
+
+## Run with Docker Compose
+
+From `student-enrollment-system`:
+
+1. Copy `.env.example` to `.env` and replace every placeholder. Generate a random signing secret with at least 32 bytes.
+2. Build the services: `mvn clean package -DskipTests`.
+3. In `frontend/enrollment-app`, run `npm ci` and `npm run build`.
+4. Return to the application directory and run `docker compose up --build`.
+5. Open http://localhost:4200 and sign in with your bootstrap administrator. Eureka is at http://localhost:8761.
+
+Compose runs **three separate PostgreSQL servers and persistent volumes**, one per owner. Domain ports stay inside the Compose network; only the UI, Gateway and Eureka bind to localhost. Allow roughly 30–90 seconds for Eureka registration/cache refresh before making requests. A startup-time 503 can be retried after registration completes.
+
+## Run without Docker
+
+Create `student_db`, `course_db` and `enrollment_db` in PostgreSQL. Give each service access only to its database. Export the following variables in each domain service's terminal (a .env file is loaded by Compose, not automatically by Java):
+
+- `DB_URL`: optional; defaults to jdbc:postgresql://localhost:5432/<domain>_db.
+- `DB_USERNAME`, `DB_PASSWORD`: required database credentials.
+- `JWT_SECRET`: same random secret in all three domain services.
+- `ADMIN_USERNAME`, `ADMIN_PASSWORD`: Student Service's initial administrator.
+- `EUREKA_URL`: optional, defaults to http://localhost:8761/eureka/.
+- `PORT`: optional per process, defaults to the table above.
+- `HTTP_CONNECT_TIMEOUT` / `HTTP_READ_TIMEOUT`: default 2s / 5s.
+- `FRONTEND_ORIGIN`: Gateway CORS origin, defaults to http://localhost:4200.
+
+Build with `mvn package -DskipTests`, then start each JAR in a separate terminal:
+`java -Xms64m -Xmx256m -jar <service>/target/<service>-0.0.1-SNAPSHOT.jar`.
+Start Eureka first, the three domains next, then Gateway. In the frontend run `npm ci` then `npm start`. Its development proxy forwards /api to Gateway. For deployment the included Nginx configuration serves the production UI and proxies /api; the UI has no domain-service addresses.
+
+For tests or explicit direct HTTP targets, set `clients.discovery.enabled=false` along with `student.service.url`, `course.service.url`, or `enrollment.service.url` as needed. The default remains discovery based.
+
+## Database upgrades
+
+Flyway owns schema changes; Hibernate validates instead of updating tables. V1 creates absent tables, adds local account/guard tables and required indexes, and preserves existing rows. Existing nonempty databases are baselined at version 0 so V1 still runs.
+
+**Back up each database first.** Old enrollment LocalDateTime values have no recorded timezone. V1 interprets them as UTC; if the old installation used a different timezone, convert those values using the correct historical zone in a backed-up staging database **before** upgrading. No software can infer that missing timezone reliably.
+
+Preexisting duplicate course titles, duplicate enrollments or null required profile fields cause migration to fail rather than silently delete data. Resolve those records explicitly before retrying. Old orphaned enrollments cannot be discovered with cross-database foreign keys; reconcile them through the owning APIs. Do not use Flyway clean on existing data.
+
+## Tests
+
+Fast HTTP-client tests run with `mvn test`. PostgreSQL API/security/concurrency tests are explicitly skipped unless `TEST_DATABASES=true` is set; a default green build does not imply database tests ran.
+
+To run the full suite:
+
+```powershell
+docker compose -f compose.test.yml up -d --wait
+./scripts/test.ps1
+docker compose -f compose.test.yml down
 ```
 
-### Step 2: Start Eureka & API Gateway
-Open terminals in their respective directories and cap their memory usage (this is vital):
-```bash
-cd eureka-server
-mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xms128m -Xmx256m"
+The test database binds only to localhost:55432. Use a separate disposable database server, never your application data. Tests clear their service's test tables. Override `TEST_STUDENT_DB_URL`, `TEST_COURSE_DB_URL`, `TEST_ENROLLMENT_DB_URL`, `TEST_DB_USERNAME` and `TEST_DB_PASSWORD` if needed. On other shells, set those variables, run `mvn clean verify`, then `npm ci`, `npm test -- --watch=false` and `npm run build` in the frontend.
 
-cd ../api-gateway
-mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xms128m -Xmx256m"
-```
+Tests cover actual PostgreSQL migrations/constraints, overlapping last-seat requests, enrollment versus deletion, cancellation boundaries, real signed JWT validation, direct-service permissions, CRUD, invalid inputs, downstream errors and the Angular authentication interceptor. Remote clients are mocked only in the domain database tests; see `docs/verification.md` for live discovery and browser checks.
 
-### Step 3: Start the Backend Domains
-Start the three main services the exact same way in their own terminals:
-```bash
-cd ../student-service
-mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xms128m -Xmx256m"
+GitHub Actions runs the PostgreSQL suite and Angular checks on Java 17 / Node 22. The local verification record distinguishes checks actually executed from configuration supplied but not executed.
 
-cd ../course-service
-mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xms128m -Xmx256m"
+## Study guide
 
-cd ../enrollment-service
-mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xms128m -Xmx256m"
-```
+See [the interview guide](docs/interview-guide.md) for class/method references, [the audit](docs/audit.md) for verified original problems, and [verification](docs/verification.md) for executed checks and remaining limitations.
 
-### Step 4: Start Angular Frontend
-Open one last terminal for the frontend:
-```bash
-cd frontend/enrollment-app
-npm install
-ng serve
-```
-
-Navigate to `http://localhost:4200` to view the finalized application!
+Further reading: [Spring Security JWT resource servers](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html) and [Spring Cloud LoadBalancer](https://docs.spring.io/spring-cloud-commons/reference/spring-cloud-commons/loadbalancer.html).
