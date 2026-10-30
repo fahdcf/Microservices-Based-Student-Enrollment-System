@@ -1,15 +1,10 @@
 package com.enrollment.enrollment.dto;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.*;
-
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class EnrollmentRequest {
-
-    @NotBlank(message = "Student CNIE is required")
+    @NotBlank @Pattern(regexp = "^[A-Z]{1,2}[0-9]{4,8}$")
     private String studentCnie;
-
-    @NotNull(message = "Course ID is required")
+    @NotNull @Positive
     private Long courseId;
 }

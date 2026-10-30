@@ -1,27 +1,31 @@
 package com.enrollment.enrollment.client;
 
 import com.enrollment.enrollment.dto.CourseDTO;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.*;
+import org.springframework.web.server.ResponseStatusException;
+import static org.springframework.http.HttpStatus.*;
 
 @Component
-@RequiredArgsConstructor
 public class CourseClient {
-
-    @Qualifier("courseWebClient")
-    private final WebClient courseWebClient;
+    private final RestClient client;
+    public CourseClient(RestClient.Builder builder,
+            @org.springframework.beans.factory.annotation.Value("${course.service.url:http://course-service}") String url) {
+        client = builder.clone().baseUrl(url).build();
+    }
 
     public CourseDTO getCourseById(Long id) {
-        return courseWebClient.get()
-                .uri("/api/courses/{id}", id)
-                .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError,
-                        response -> Mono.error(new IllegalArgumentException("Course not found with id: " + id)))
-                .bodyToMono(CourseDTO.class)
-                .block();
+        try {
+            CourseDTO result = client.get().uri("/api/courses/{value}", id).retrieve()
+                .onStatus(status -> status.value() == 404, (request, response) -> {
+                    throw new ResponseStatusException(NOT_FOUND, "Course not found");
+                }).body(CourseDTO.class);
+            if (result == null || result.getId() == null || result.getTitle() == null || !result.getId().equals(id)) {
+                throw new ResponseStatusException(SERVICE_UNAVAILABLE, "Invalid response from Course Service");
+            }
+            return result;
+        } catch (RestClientException | IllegalStateException ex) {
+            throw new ResponseStatusException(SERVICE_UNAVAILABLE, "Course Service unavailable");
+        }
     }
 }

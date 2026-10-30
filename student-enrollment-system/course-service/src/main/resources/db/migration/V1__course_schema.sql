@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS courses (
+ id BIGSERIAL PRIMARY KEY, title VARCHAR(255) NOT NULL,
+ description TEXT NOT NULL, credits INTEGER NOT NULL CHECK (credits BETWEEN 1 AND 10)
+);
+ALTER TABLE courses ALTER COLUMN description SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_course_title ON courses(title);

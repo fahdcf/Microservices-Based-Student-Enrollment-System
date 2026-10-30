@@ -2,7 +2,7 @@ package com.enrollment.enrollment.dto;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class EnrollmentResponseDTO {
@@ -10,6 +10,6 @@ public class EnrollmentResponseDTO {
     private String studentCnie;
     private String courseName;
     private int courseCredits;
-    private LocalDateTime enrollmentDate;
+    private Instant enrollmentDate;
     private boolean deletable;
 }

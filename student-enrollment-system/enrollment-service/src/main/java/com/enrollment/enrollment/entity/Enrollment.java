@@ -3,11 +3,11 @@ package com.enrollment.enrollment.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "enrollments",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"studentId", "courseId"}))
+       uniqueConstraints = @UniqueConstraint(name = "uq_enrollment_student_course", columnNames = {"student_id", "course_id"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Enrollment {
 
@@ -15,12 +15,12 @@ public class Enrollment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "student_id", nullable = false)
     private Long studentId;
 
-    @Column(nullable = false)
+    @Column(name = "course_id", nullable = false)
     private Long courseId;
 
     @Column(nullable = false)
-    private LocalDateTime enrollmentDate;
+    private Instant enrollmentDate;
 }

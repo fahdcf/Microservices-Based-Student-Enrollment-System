@@ -3,6 +3,7 @@ package com.enrollment.enrollment.controller;
 import com.enrollment.enrollment.dto.*;
 import com.enrollment.enrollment.service.EnrollmentService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -24,19 +25,14 @@ public class EnrollmentController {
     }
 
     @GetMapping("/student/{cnie}")
-    public ResponseEntity<List<EnrollmentResponseDTO>> getByStudentCnie(@PathVariable String cnie) {
+    public ResponseEntity<List<EnrollmentResponseDTO>> getByStudentCnie(@PathVariable @Pattern(regexp = "^[A-Z]{1,2}[0-9]{4,8}$") String cnie) {
         return ResponseEntity.ok(enrollmentService.getEnrollmentsByStudentCnie(cnie));
     }
 
     @DeleteMapping("/{enrollmentId}")
-    public ResponseEntity<Void> cancel(@PathVariable Long enrollmentId) {
+    public ResponseEntity<Void> cancel(@PathVariable @Positive Long enrollmentId) {
         enrollmentService.cancelEnrollment(enrollmentId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/student/{studentId}")
-    public ResponseEntity<Void> deleteByStudentId(@PathVariable Long studentId) {
-        enrollmentService.deleteEnrollmentsByStudentId(studentId);
-        return ResponseEntity.noContent().build();
-    }
 }
