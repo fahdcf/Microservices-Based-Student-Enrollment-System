@@ -1,3 +1,5 @@
+import { AuthService } from '../../services/auth.service';
+import { Router } from '@angular/router';
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -10,10 +12,12 @@ import { CommonModule } from '@angular/common';
   styleUrl: './sidebar.scss'
 })
 export class SidebarComponent {
-  navItems = [
+  constructor(public auth: AuthService, private router: Router) {}
+  logout() { this.auth.logout(); void this.router.navigateByUrl('/login'); }
+  get navItems() { return [
     { path: '/dashboard', label: 'Dashboard', icon: '⬡' },
     { path: '/students',  label: 'Students',  icon: '◈' },
     { path: '/courses',   label: 'Courses',   icon: '◇' },
     { path: '/enroll',    label: 'Enrollment',icon: '◉' },
-  ];
+  ].filter(item => this.auth.isAdmin || item.path !== '/students'); }
 }

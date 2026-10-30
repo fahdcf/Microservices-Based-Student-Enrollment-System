@@ -25,7 +25,7 @@
         <div class="form-field" style="margin-bottom:1.25rem">
           <label>Your CNIE</label>
           <input type="text" [(ngModel)]="studentCnie" placeholder="e.g. CD2387"
-                 [disabled]="coursesLoading" />
+                 [disabled]="coursesLoading || !auth.isAdmin" />
         </div>
 
         <div class="form-field" style="margin-bottom:1.5rem">

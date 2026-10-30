@@ -1,15 +1,3 @@
-<header class="topbar">
-  <div class="search-container">
-    <span class="search-icon">⚲</span>
-    <input type="text" placeholder="Search students, courses..." class="search-input">
-  </div>
-  
-  <div class="topbar-actions">
-    <button class="action-btn">
-      <span class="icon">⍾</span>
-    </button>
-    <button class="action-btn">
-      <span class="icon">⚙</span>
-    </button>
-  </div>
-</header>
+<header class="topbar"><span>EduEnroll</span><div class="topbar-actions">
+  <button *ngIf="auth.session()" class="btn btn-outline" (click)="logout()">Sign out</button>
+</div></header>

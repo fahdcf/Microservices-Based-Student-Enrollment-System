@@ -1,3 +1,4 @@
+import { AuthService } from '../../services/auth.service';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -24,20 +25,22 @@ export class DashboardComponent implements OnInit {
   error = '';
   searched = false;
 
-  constructor(
+  constructor(public auth: AuthService,
     private studentService: StudentService,
     private enrollmentService: EnrollmentService,
     private courseService: CourseService
   ) {}
 
   ngOnInit() {
-    this.studentService.getAll().subscribe({
+    if (this.auth.isAdmin) this.studentService.getAll().subscribe({
       next: s => this.totalStudents = s.length,
       error: () => this.statsError = 'Could not reach backend. Make sure all services are running.'
     });
+    this.searchCnie = this.auth.session()?.cnie || '';
+    if (this.searchCnie) this.search();
     this.courseService.getAll().subscribe({
       next: c => this.totalCourses = c.length,
-      error: () => {}
+      error: () => this.statsError = 'Could not load courses. Please try again.'
     });
   }
 

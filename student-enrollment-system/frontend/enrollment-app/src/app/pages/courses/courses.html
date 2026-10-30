@@ -4,7 +4,7 @@
       <div class="page-title">Courses</div>
       <div class="page-subtitle">Manage available courses in the system</div>
     </div>
-    <button class="btn btn-primary" (click)="showForm = !showForm; error = ''; success = ''">
+    <button *ngIf="auth.isAdmin" class="btn btn-primary" (click)="showForm ? showForm = false : startCreate()">
       {{ showForm ? '✕ Close' : '+ Add Course' }}
     </button>
   </div>
@@ -15,7 +15,7 @@
 
   <!-- Add Form -->
   <div *ngIf="showForm" class="card form-card">
-    <h3 class="form-title">Create New Course</h3>
+    <h3 class="form-title">{{ editingId === null ? 'Create New Course' : 'Edit Course' }}</h3>
     <form #f="ngForm" (ngSubmit)="submit(f)">
       <div class="form-grid">
         <div class="form-field">
@@ -33,7 +33,7 @@
         </div>
       </div>
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary" [disabled]="f.invalid">Create Course</button>
+        <button type="submit" class="btn btn-primary" [disabled]="f.invalid">{{ editingId === null ? 'Create Course' : 'Save Changes' }}</button>
         <button type="button" class="btn btn-outline" (click)="showForm = false">Cancel</button>
       </div>
     </form>
@@ -64,7 +64,8 @@
           <td class="muted">{{ c.description }}</td>
           <td><span class="badge badge-accent">{{ c.credits }} cr</span></td>
           <td>
-            <button class="btn btn-danger btn-sm" (click)="delete(c.id, c.title)">Delete</button>
+            <button *ngIf="auth.isAdmin" class="btn btn-outline btn-sm" (click)="edit(c)">Edit</button>
+            <button *ngIf="auth.isAdmin" class="btn btn-danger btn-sm" (click)="delete(c.id, c.title)">Delete</button>
           </td>
         </tr>
       </tbody>
