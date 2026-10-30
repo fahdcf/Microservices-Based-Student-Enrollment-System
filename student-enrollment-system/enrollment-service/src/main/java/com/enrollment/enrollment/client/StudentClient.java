@@ -1,37 +1,45 @@
 package com.enrollment.enrollment.client;
 
 import com.enrollment.enrollment.dto.StudentDTO;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.*;
+import org.springframework.web.server.ResponseStatusException;
+import static org.springframework.http.HttpStatus.*;
 
 @Component
-@RequiredArgsConstructor
 public class StudentClient {
-
-    @Qualifier("studentWebClient")
-    private final WebClient studentWebClient;
-
-    public StudentDTO getStudentByCnie(String cnie) {
-        return studentWebClient.get()
-                .uri("/api/students/cnie/{cnie}", cnie)
-                .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError,
-                        response -> Mono.error(new IllegalArgumentException("Student not found with CNIE: " + cnie)))
-                .bodyToMono(StudentDTO.class)
-                .block();
+    private final RestClient client;
+    public StudentClient(RestClient.Builder builder,
+            @org.springframework.beans.factory.annotation.Value("${student.service.url:http://student-service}") String url) {
+        client = builder.clone().baseUrl(url).build();
     }
 
+    public StudentDTO getStudentByCnie(String cnie) {
+        try {
+            StudentDTO result = client.get().uri("/api/students/cnie/{value}", cnie).retrieve()
+                .onStatus(status -> status.value() == 404, (request, response) -> {
+                    throw new ResponseStatusException(NOT_FOUND, "Student not found");
+                }).body(StudentDTO.class);
+            if (result == null || result.getId() == null || result.getCnie() == null) {
+                throw new ResponseStatusException(SERVICE_UNAVAILABLE, "Invalid response from Student Service");
+            }
+            return result;
+        } catch (RestClientException | IllegalStateException ex) {
+            throw new ResponseStatusException(SERVICE_UNAVAILABLE, "Student Service unavailable");
+        }
+    }
     public StudentDTO getStudentById(Long id) {
-        return studentWebClient.get()
-                .uri("/api/students/{id}", id)
-                .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError,
-                        response -> Mono.error(new IllegalArgumentException("Student not found with id: " + id)))
-                .bodyToMono(StudentDTO.class)
-                .block();
+        try {
+            StudentDTO result = client.get().uri("/api/students/{value}", id).retrieve()
+                .onStatus(status -> status.value() == 404, (request, response) -> {
+                    throw new ResponseStatusException(NOT_FOUND, "Student not found");
+                }).body(StudentDTO.class);
+            if (result == null || result.getId() == null || result.getCnie() == null) {
+                throw new ResponseStatusException(SERVICE_UNAVAILABLE, "Invalid response from Student Service");
+            }
+            return result;
+        } catch (RestClientException | IllegalStateException ex) {
+            throw new ResponseStatusException(SERVICE_UNAVAILABLE, "Student Service unavailable");
+        }
     }
 }

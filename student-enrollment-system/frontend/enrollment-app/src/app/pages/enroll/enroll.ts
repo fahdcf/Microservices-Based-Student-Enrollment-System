@@ -1,3 +1,4 @@
+import { AuthService } from '../../services/auth.service';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -23,12 +24,13 @@ export class EnrollComponent implements OnInit {
   success = '';
   result: Enrollment | null = null;
 
-  constructor(
+  constructor(public auth: AuthService,
     private courseService: CourseService,
     private enrollmentService: EnrollmentService
   ) {}
 
   ngOnInit() {
+    this.studentCnie = this.auth.session()?.cnie || '';
     this.courseService.getAll().subscribe({
       next: data => { this.courses = data; this.coursesLoading = false; },
       error: err => {

@@ -1,6 +1,9 @@
+import { AuthService } from '../../services/auth.service';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { StudentService } from '../../services/student.service';
 import { Student, StudentRequest } from '../../models/student.model';
 
@@ -17,10 +20,11 @@ export class StudentsComponent implements OnInit {
   error = '';
   success = '';
   showForm = false;
+  editingId: number | null = null;
 
   formData: StudentRequest = { cnie: '', firstName: '', lastName: '', email: '' };
 
-  constructor(private studentService: StudentService) {}
+  constructor(public auth: AuthService, private http: HttpClient, private studentService: StudentService) {}
 
   ngOnInit() { this.load(); }
 
@@ -33,14 +37,30 @@ export class StudentsComponent implements OnInit {
     });
   }
 
+  startCreate() {
+    this.editingId = null;
+    this.formData = { cnie: '', firstName: '', lastName: '', email: '' };
+    this.showForm = true; this.error = ''; this.success = '';
+  }
+
+  edit(item: Student) {
+    this.editingId = item.id;
+    this.formData = { ...item };
+    this.showForm = true; this.error = ''; this.success = '';
+  }
+
   submit(form: NgForm) {
     if (form.invalid) return;
     this.error = '';
     this.success = '';
-    this.studentService.create(this.formData).subscribe({
+    const operation = this.editingId === null
+      ? this.studentService.create(this.formData)
+      : this.studentService.update(this.editingId, this.formData);
+    operation.subscribe({
       next: () => {
-        this.success = `Student ${this.formData.cnie} registered successfully!`;
+        this.success = 'Student saved successfully.';
         this.showForm = false;
+        this.editingId = null;
         form.reset();
         this.formData = { cnie: '', firstName: '', lastName: '', email: '' };
         this.load();
@@ -61,6 +81,21 @@ export class StudentsComponent implements OnInit {
         this.load();
         setTimeout(() => this.success = '', 3000);
       },
+      error: err => this.error = this.extractError(err)
+    });
+  }
+
+  accountStudent: Student | null = null;
+  accountUsername = '';
+  accountPassword = '';
+  createAccount(student: Student) { this.accountStudent = student; this.accountUsername = ''; this.accountPassword = ''; }
+  saveAccount() {
+    const student = this.accountStudent;
+    if (!student) return;
+    const username = this.accountUsername;
+    const password = this.accountPassword;
+    this.http.post(environment.apiUrl + '/auth/accounts', { username, password, studentId: student.id }).subscribe({
+      next: () => { this.success = 'Student account created.'; this.accountStudent = null; this.accountPassword = ''; },
       error: err => this.error = this.extractError(err)
     });
   }

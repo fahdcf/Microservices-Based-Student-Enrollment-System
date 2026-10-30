@@ -20,8 +20,8 @@
     <div class="user-profile">
       <div class="avatar">A</div>
       <div class="user-info">
-        <span class="user-name">Admin</span>
-        <span class="user-role">System Manager</span>
+        <span class="user-name">{{ auth.session()?.cnie || 'Admin' }}</span>
+        <span class="user-role">{{ auth.session()?.role || 'Signed out' }}</span>
       </div>
     </div>
   </div>

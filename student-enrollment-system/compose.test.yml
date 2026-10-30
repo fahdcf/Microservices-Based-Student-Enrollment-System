@@ -1,0 +1,14 @@
+name: enrollment-tests
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: enrollment_test
+      POSTGRES_PASSWORD: local-test-password
+    ports: ["127.0.0.1:55432:5432"]
+    volumes: ["./scripts/test-databases.sql:/docker-entrypoint-initdb.d/databases.sql:ro"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U enrollment_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 20

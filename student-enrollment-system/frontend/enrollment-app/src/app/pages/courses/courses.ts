@@ -1,3 +1,4 @@
+import { AuthService } from '../../services/auth.service';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
@@ -17,10 +18,11 @@ export class CoursesComponent implements OnInit {
   error = '';
   success = '';
   showForm = false;
+  editingId: number | null = null;
 
   formData: CourseRequest = { title: '', description: '', credits: 1 };
 
-  constructor(private courseService: CourseService) {}
+  constructor(public auth: AuthService, private courseService: CourseService) {}
 
   ngOnInit() { this.load(); }
 
@@ -33,14 +35,30 @@ export class CoursesComponent implements OnInit {
     });
   }
 
+  startCreate() {
+    this.editingId = null;
+    this.formData = { title: '', description: '', credits: 1 };
+    this.showForm = true; this.error = ''; this.success = '';
+  }
+
+  edit(item: Course) {
+    this.editingId = item.id;
+    this.formData = { ...item };
+    this.showForm = true; this.error = ''; this.success = '';
+  }
+
   submit(form: NgForm) {
     if (form.invalid) return;
     this.error = '';
     this.success = '';
-    this.courseService.create(this.formData).subscribe({
+    const operation = this.editingId === null
+      ? this.courseService.create(this.formData)
+      : this.courseService.update(this.editingId, this.formData);
+    operation.subscribe({
       next: created => {
-        this.success = `Course "${created.title}" created successfully!`;
+        this.success = 'Course saved successfully.';
         this.showForm = false;
+        this.editingId = null;
         form.reset();
         this.formData = { title: '', description: '', credits: 1 };
         this.load();

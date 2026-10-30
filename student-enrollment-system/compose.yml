@@ -1,0 +1,94 @@
+name: student-enrollment
+services:
+  student-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: student_db
+      POSTGRES_USER: ${DB_USERNAME:?Set DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+    volumes:
+      - student-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  course-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: course_db
+      POSTGRES_USER: ${DB_USERNAME:?Set DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+    volumes:
+      - course-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  enrollment-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: enrollment_db
+      POSTGRES_USER: ${DB_USERNAME:?Set DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+    volumes:
+      - enrollment-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  eureka-server:
+    build: {context: ., args: {SERVICE: eureka-server}}
+    ports: ["127.0.0.1:8761:8761"]
+  student-service:
+    build: {context: ., args: {SERVICE: student-service}}
+    environment:
+      DB_URL: jdbc:postgresql://student-db:5432/student_db
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?Set ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
+    depends_on:
+      student-db: {condition: service_healthy}
+      eureka-server: {condition: service_started}
+  course-service:
+    build: {context: ., args: {SERVICE: course-service}}
+    environment:
+      DB_URL: jdbc:postgresql://course-db:5432/course_db
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+    depends_on:
+      course-db: {condition: service_healthy}
+      eureka-server: {condition: service_started}
+  enrollment-service:
+    build: {context: ., args: {SERVICE: enrollment-service}}
+    environment:
+      DB_URL: jdbc:postgresql://enrollment-db:5432/enrollment_db
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+    depends_on:
+      enrollment-db: {condition: service_healthy}
+      eureka-server: {condition: service_started}
+  api-gateway:
+    build: {context: ., args: {SERVICE: api-gateway}}
+    environment:
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:4200}
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on: [eureka-server, student-service, course-service, enrollment-service]
+  frontend:
+    build: ./frontend/enrollment-app
+    ports: ["127.0.0.1:4200:80"]
+    depends_on: [api-gateway]
+volumes:
+  student-data:
+  course-data:
+  enrollment-data:

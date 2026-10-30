@@ -18,6 +18,10 @@ export class CourseService {
     return this.http.post<Course>(this.url, request);
   }
 
+  update(id: number, request: CourseRequest): Observable<Course> {
+    return this.http.put<Course>(this.url + '/' + id, request);
+  }
+
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
   }

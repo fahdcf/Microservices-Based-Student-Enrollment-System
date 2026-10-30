@@ -6,6 +6,9 @@ import com.enrollment.course.mapper.CourseMapper;
 import com.enrollment.course.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import static org.springframework.http.HttpStatus.*;
 
 import java.util.List;
 
@@ -15,10 +18,11 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final CourseMapper courseMapper;
+    private final com.enrollment.course.client.EnrollmentClient enrollmentClient;
 
     public CourseResponse createCourse(CourseRequest request) {
         if (courseRepository.existsByTitle(request.getTitle())) {
-            throw new IllegalArgumentException("A course with title '" + request.getTitle() + "' already exists.");
+            throw new ResponseStatusException(CONFLICT, "A course with title '" + request.getTitle() + "' already exists.");
         }
         Course saved = courseRepository.save(courseMapper.toEntity(request));
         return courseMapper.toResponse(saved);
@@ -33,13 +37,16 @@ public class CourseService {
 
     public CourseResponse getCourseById(Long id) {
         Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Course not found with id: " + id));
         return courseMapper.toResponse(course);
     }
 
     public CourseResponse updateCourse(Long id, CourseRequest request) {
         Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Course not found with id: " + id));
+        if (!course.getTitle().equals(request.getTitle()) && courseRepository.existsByTitle(request.getTitle())) {
+            throw new ResponseStatusException(CONFLICT, "A course with this title already exists");
+        }
         course.setTitle(request.getTitle());
         course.setDescription(request.getDescription());
         course.setCredits(request.getCredits());
@@ -48,8 +55,9 @@ public class CourseService {
 
     public void deleteCourse(Long id) {
         if (!courseRepository.existsById(id)) {
-            throw new IllegalArgumentException("Course not found with id: " + id);
+            throw new ResponseStatusException(NOT_FOUND, "Course not found with id: " + id);
         }
+        enrollmentClient.closeReference(id);
         courseRepository.deleteById(id);
     }
 }
