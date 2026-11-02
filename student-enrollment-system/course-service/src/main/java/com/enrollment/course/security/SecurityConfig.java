@@ -1,7 +1,6 @@
 package com.enrollment.course.security;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
@@ -29,9 +28,12 @@ public class SecurityConfig {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).build();
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
             JwtValidators.createDefaultWithIssuer(issuer),
-            jwt -> jwt.getExpiresAt() != null && jwt.getAudience().contains("enrollment-api")
-                ? OAuth2TokenValidatorResult.success()
-                : OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token"))));
+            jwt -> {
+                if (jwt.getExpiresAt() == null || !jwt.getAudience().contains("enrollment-api")) {
+                    return OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token"));
+                }
+                return OAuth2TokenValidatorResult.success();
+            }));
         return decoder;
     }
 

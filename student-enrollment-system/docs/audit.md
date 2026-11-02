@@ -1,4 +1,6 @@
-# Audit and implemented changes
+# Original audit and implemented changes
+
+For the subsequent JPA simplification, see [simplification-guide.md](simplification-guide.md). This audit records the original implementation problems.
 
 The audit covered all five Maven modules, their Java sources/configuration, Angular components/services/models/routing, existing tests and repository documentation. The initial branch was main with one preexisting modification: Gateway's routes had already been changed to lb:// service names. That change was retained on codex/enrollment-reliability. AGENTS.md and task files were excluded as requested.
 

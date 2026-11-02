@@ -53,8 +53,6 @@ class EnrollmentApiTest {
             long id=cnie.equals("AB1234")?1:Long.parseLong(cnie.substring(2));
             return new StudentDTO(id,cnie,"Test","User","test@example.test");
         });
-        when(students.getStudentById(anyLong())).thenAnswer(a ->
-            new StudentDTO(a.getArgument(0),"AB1234","Test","User","test@example.test"));
         when(courses.getCourseById(anyLong())).thenAnswer(a ->
             new CourseDTO(a.getArgument(0),"Java","Introduction",4));
         authenticate();
@@ -176,6 +174,77 @@ class EnrollmentApiTest {
         enroll("AB1234");
         assertThatThrownBy(() -> jdbc.update("INSERT INTO enrollments(student_id,course_id,enrollment_date) VALUES (1,1,now())"))
             .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
+    void concurrentFirstRequestsCreateLockRowsSafely(boolean sameStudent) throws Exception {
+        var start = new CyclicBarrier(4);
+        doAnswer(call -> {
+            String cnie = call.getArgument(0);
+            start.await(10, TimeUnit.SECONDS);
+            return new StudentDTO(Long.parseLong(cnie.substring(2)), cnie, "Test", "User", "t@example.test");
+        }).when(students).getStudentByCnie(anyString());
+        var pool = Executors.newFixedThreadPool(4);
+        try {
+            List<Future<Boolean>> results = new ArrayList<>();
+            for (int i = 2000; i < 2004; i++) {
+                String cnie = sameStudent ? "CD2000" : "CD" + i;
+                results.add(pool.submit(() -> {
+                    authenticate();
+                    try {
+                        service.enrollStudent(new EnrollmentRequest(cnie, 1L));
+                        return true;
+                    } catch (ResponseStatusException ex) {
+                        assertThat(ex.getStatusCode().value()).isEqualTo(409);
+                        return false;
+                    } finally {
+                        clearAuth();
+                    }
+                }));
+            }
+            int successes = 0;
+            for (var result : results) if (result.get(20, TimeUnit.SECONDS)) successes++;
+            assertThat(successes).isEqualTo(sameStudent ? 1 : 3);
+            assertThat(repository.countByCourseId(1L)).isEqualTo(successes);
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
+    void deletionBeforeEnrollmentLockRejectsStaleLookup(boolean deleteStudent) throws Exception {
+        var studentFetched = new CountDownLatch(1);
+        var continueEnrollment = new CountDownLatch(1);
+        doAnswer(call -> {
+            studentFetched.countDown();
+            assertThat(continueEnrollment.await(10, TimeUnit.SECONDS)).isTrue();
+            return new StudentDTO(1L, "AB1234", "Test", "User", "t@example.test");
+        }).when(students).getStudentByCnie("AB1234");
+        var pool = Executors.newSingleThreadExecutor();
+        try {
+            var enrollment = pool.submit(() -> {
+                authenticate();
+                try {
+                    service.enrollStudent(new EnrollmentRequest("AB1234", 1L));
+                    return 201;
+                } catch (ResponseStatusException ex) {
+                    return ex.getStatusCode().value();
+                } finally {
+                    clearAuth();
+                }
+            });
+            assertThat(studentFetched.await(10, TimeUnit.SECONDS)).isTrue();
+            if (deleteStudent) service.closeStudent(1L);
+            else service.closeCourse(1L);
+            continueEnrollment.countDown();
+            assertThat(enrollment.get(15, TimeUnit.SECONDS)).isEqualTo(409);
+            assertThat(repository.count()).isZero();
+        } finally {
+            continueEnrollment.countDown();
+            pool.shutdownNow();
+        }
     }
 
     static String token(String role, String id, String cnie) {

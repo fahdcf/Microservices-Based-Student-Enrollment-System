@@ -28,18 +28,4 @@ public class StudentClient {
             throw new ResponseStatusException(SERVICE_UNAVAILABLE, "Student Service unavailable");
         }
     }
-    public StudentDTO getStudentById(Long id) {
-        try {
-            StudentDTO result = client.get().uri("/api/students/{value}", id).retrieve()
-                .onStatus(status -> status.value() == 404, (request, response) -> {
-                    throw new ResponseStatusException(NOT_FOUND, "Student not found");
-                }).body(StudentDTO.class);
-            if (result == null || result.getId() == null || result.getCnie() == null) {
-                throw new ResponseStatusException(SERVICE_UNAVAILABLE, "Invalid response from Student Service");
-            }
-            return result;
-        } catch (RestClientException | IllegalStateException ex) {
-            throw new ResponseStatusException(SERVICE_UNAVAILABLE, "Student Service unavailable");
-        }
-    }
 }

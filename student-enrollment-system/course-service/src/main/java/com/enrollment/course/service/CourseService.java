@@ -1,6 +1,7 @@
 package com.enrollment.course.service;
 
 import com.enrollment.course.dto.*;
+import com.enrollment.course.client.EnrollmentClient;
 import com.enrollment.course.entity.Course;
 import com.enrollment.course.mapper.CourseMapper;
 import com.enrollment.course.repository.CourseRepository;
@@ -18,7 +19,7 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final CourseMapper courseMapper;
-    private final com.enrollment.course.client.EnrollmentClient enrollmentClient;
+    private final EnrollmentClient enrollmentClient;
 
     public CourseResponse createCourse(CourseRequest request) {
         if (courseRepository.existsByTitle(request.getTitle())) {
@@ -41,6 +42,7 @@ public class CourseService {
         return courseMapper.toResponse(course);
     }
 
+    @Transactional
     public CourseResponse updateCourse(Long id, CourseRequest request) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Course not found with id: " + id));
@@ -50,14 +52,14 @@ public class CourseService {
         course.setTitle(request.getTitle());
         course.setDescription(request.getDescription());
         course.setCredits(request.getCredits());
-        return courseMapper.toResponse(courseRepository.save(course));
+        return courseMapper.toResponse(course);
     }
 
     public void deleteCourse(Long id) {
         if (!courseRepository.existsById(id)) {
             throw new ResponseStatusException(NOT_FOUND, "Course not found with id: " + id);
         }
-        enrollmentClient.closeReference(id);
+        enrollmentClient.closeCourseForEnrollment(id);
         courseRepository.deleteById(id);
     }
 }

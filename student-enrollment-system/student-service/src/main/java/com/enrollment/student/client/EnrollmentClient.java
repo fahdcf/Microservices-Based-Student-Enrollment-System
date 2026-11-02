@@ -14,7 +14,7 @@ public class EnrollmentClient {
     }
 
     // Closing a reference is idempotent and blocks future enrollments before local deletion.
-    public void closeReference(Long id) {
+    public void closeStudentForEnrollment(Long id) {
         try {
             client.post().uri("/internal/references/students/{id}/close", id).retrieve()
                 .onStatus(status -> status.value() == 409, (request, response) -> {

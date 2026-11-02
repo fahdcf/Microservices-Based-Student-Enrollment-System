@@ -37,11 +37,11 @@ Each service uses Controller → Service → Repository → its own database. No
 1. Angular submits a CNIE and course ID to Gateway with a bearer token.
 2. Gateway discovers Enrollment Service through Eureka and forwards the request.
 3. `EnrollmentService.enrollStudent` checks ownership, resolves the student, and locks the student's reference followed by the course's reference.
-4. It rechecks the student and fetches the course through REST, rejecting missing resources with 404 and unavailable/invalid dependencies with 503.
+4. It fetches the course through REST, rejecting missing resources with 404 and unavailable/invalid dependencies with 503.
 5. In the same PostgreSQL transaction it rejects a duplicate or a course with **three** enrollments (409), then inserts the enrollment.
 6. The transaction commits before returning 201. PostgreSQL releases the locks.
 
-`ReferenceGuard` creates stable rows with INSERT … ON CONFLICT DO NOTHING and locks them using SELECT … FOR UPDATE. The course row serializes capacity checks across service instances. A unique database index independently prevents duplicate student/course pairs. Transactions alone would not protect a count followed by an insert.
+`EnrollmentReferenceRepository` creates missing reference rows with INSERT … ON CONFLICT DO NOTHING and loads them with JPA `@Lock(PESSIMISTIC_WRITE)`. The course row serializes capacity checks across service instances. A unique database index independently prevents duplicate student/course pairs. Transactions alone would not protect a count followed by an insert.
 
 Cancellation deletes the enrollment, freeing its seat. It is allowed strictly **before** enrollment time + 24 hours; exactly 24 hours is rejected. Enrollment timestamps use UTC `Instant` and an injectable `Clock`. Cancellation locks the enrollment so a second cancellation returns 404. Administrators follow the same cancellation window.
 
@@ -154,3 +154,5 @@ GitHub Actions runs the PostgreSQL suite and Angular checks on Java 17 / Node 22
 See [the interview guide](docs/interview-guide.md) for class/method references, [the audit](docs/audit.md) for verified original problems, and [verification](docs/verification.md) for executed checks and remaining limitations.
 
 Further reading: [Spring Security JWT resource servers](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html) and [Spring Cloud LoadBalancer](https://docs.spring.io/spring-cloud-commons/reference/spring-cloud-commons/loadbalancer.html).
+
+See [the simplification guide](docs/simplification-guide.md) for the JPA locking workflow and before/after examples.

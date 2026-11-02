@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../../services/api-error';
 import { AuthService } from '../../services/auth.service';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -31,7 +32,7 @@ export class CoursesComponent implements OnInit {
     this.error = '';
     this.courseService.getAll().subscribe({
       next: data => { this.courses = data; this.loading = false; },
-      error: err => { this.error = this.extractError(err); this.loading = false; }
+      error: err => { this.error = apiErrorMessage(err); this.loading = false; }
     });
   }
 
@@ -55,7 +56,7 @@ export class CoursesComponent implements OnInit {
       ? this.courseService.create(this.formData)
       : this.courseService.update(this.editingId, this.formData);
     operation.subscribe({
-      next: created => {
+      next: () => {
         this.success = 'Course saved successfully.';
         this.showForm = false;
         this.editingId = null;
@@ -65,7 +66,7 @@ export class CoursesComponent implements OnInit {
         setTimeout(() => this.success = '', 4000);
       },
       error: err => {
-        this.error = this.extractError(err);
+        this.error = apiErrorMessage(err);
       }
     });
   }
@@ -79,16 +80,7 @@ export class CoursesComponent implements OnInit {
         this.load();
         setTimeout(() => this.success = '', 3000);
       },
-      error: err => this.error = this.extractError(err)
+      error: err => this.error = apiErrorMessage(err)
     });
-  }
-
-  private extractError(err: any): string {
-    if (!err?.error) return `Request failed (HTTP ${err?.status ?? 'unknown'}).`;
-    if (typeof err.error === 'string') return err.error;
-    if (err.error?.error) return err.error.error;
-    const entries = Object.entries(err.error);
-    if (entries.length) return entries.map(([k, v]) => `${k}: ${v}`).join(' | ');
-    return `Unexpected error (HTTP ${err.status}).`;
   }
 }

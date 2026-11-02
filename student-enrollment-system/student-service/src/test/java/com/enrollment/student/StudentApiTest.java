@@ -44,10 +44,12 @@ class StudentApiTest {
     @Test void crudAndMissingResource() throws Exception {
         long id = create();
         mvc.perform(get(url+"/"+id).header("Authorization",admin)).andExpect(status().isOk());
-        mvc.perform(put(url+"/"+id).header("Authorization",admin).contentType("application/json").content(body))
+        mvc.perform(put(url+"/"+id).header("Authorization",admin).contentType("application/json").content(body.replace("Test", "Updated")))
             .andExpect(status().isOk());
+        mvc.perform(get(url+"/"+id).header("Authorization",admin))
+            .andExpect(jsonPath("$.firstName").value("Updated"));
         mvc.perform(delete(url+"/"+id).header("Authorization",admin)).andExpect(status().isNoContent());
-        verify(enrollments).closeReference(id);
+        verify(enrollments).closeStudentForEnrollment(id);
         mvc.perform(get(url+"/"+id).header("Authorization",admin)).andExpect(status().isNotFound());
     }
 
@@ -62,10 +64,10 @@ class StudentApiTest {
 
     @Test void deletionRejectsReferencesAndDependencyFailure() throws Exception {
         long id = create();
-        doThrow(new ResponseStatusException(CONFLICT,"Active enrollments")).when(enrollments).closeReference(id);
+        doThrow(new ResponseStatusException(CONFLICT,"Active enrollments")).when(enrollments).closeStudentForEnrollment(id);
         mvc.perform(delete(url+"/"+id).header("Authorization",admin)).andExpect(status().isConflict());
         mvc.perform(get(url+"/"+id).header("Authorization",admin)).andExpect(status().isOk());
-        doThrow(new ResponseStatusException(SERVICE_UNAVAILABLE,"Unavailable")).when(enrollments).closeReference(id);
+        doThrow(new ResponseStatusException(SERVICE_UNAVAILABLE,"Unavailable")).when(enrollments).closeStudentForEnrollment(id);
         mvc.perform(delete(url+"/"+id).header("Authorization",admin)).andExpect(status().isServiceUnavailable());
     }
 

@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../../services/api-error';
 import { AuthService } from '../../services/auth.service';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -33,7 +34,7 @@ export class StudentsComponent implements OnInit {
     this.error = '';
     this.studentService.getAll().subscribe({
       next: data => { this.students = data; this.loading = false; },
-      error: err => { this.error = this.extractError(err); this.loading = false; }
+      error: err => { this.error = apiErrorMessage(err); this.loading = false; }
     });
   }
 
@@ -67,7 +68,7 @@ export class StudentsComponent implements OnInit {
         setTimeout(() => this.success = '', 4000);
       },
       error: err => {
-        this.error = this.extractError(err);
+        this.error = apiErrorMessage(err);
       }
     });
   }
@@ -81,7 +82,7 @@ export class StudentsComponent implements OnInit {
         this.load();
         setTimeout(() => this.success = '', 3000);
       },
-      error: err => this.error = this.extractError(err)
+      error: err => this.error = apiErrorMessage(err)
     });
   }
 
@@ -96,16 +97,7 @@ export class StudentsComponent implements OnInit {
     const password = this.accountPassword;
     this.http.post(environment.apiUrl + '/auth/accounts', { username, password, studentId: student.id }).subscribe({
       next: () => { this.success = 'Student account created.'; this.accountStudent = null; this.accountPassword = ''; },
-      error: err => this.error = this.extractError(err)
+      error: err => this.error = apiErrorMessage(err)
     });
-  }
-
-  private extractError(err: any): string {
-    if (!err?.error) return `Request failed (HTTP ${err?.status ?? 'unknown'}).`;
-    if (typeof err.error === 'string') return err.error;
-    if (err.error?.error) return err.error.error;
-    const entries = Object.entries(err.error);
-    if (entries.length) return entries.map(([k, v]) => `${k}: ${v}`).join(' | ');
-    return `Unexpected error (HTTP ${err.status}).`;
   }
 }

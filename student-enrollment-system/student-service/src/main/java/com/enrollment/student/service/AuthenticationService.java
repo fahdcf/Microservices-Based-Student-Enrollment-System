@@ -18,6 +18,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
+    private static final long TOKEN_LIFETIME_SECONDS = 900;
+    private static final String UNKNOWN_USER_HASH = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
     private final UserAccountRepository accounts;
     private final StudentRepository students;
     private final PasswordEncoder passwords;
@@ -29,7 +31,7 @@ public class AuthenticationService {
     public LoginResponse login(String username, String password) {
         UserAccount account = accounts.findByUsername(username).orElse(null);
         // Use a real BCrypt comparison even for unknown users.
-        String hash = account == null ? "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy" : account.getPasswordHash();
+        String hash = account == null ? UNKNOWN_USER_HASH : account.getPasswordHash();
         if (!passwords.matches(password, hash) || account == null) {
             throw new ResponseStatusException(UNAUTHORIZED, "Invalid username or password");
         }
@@ -40,12 +42,12 @@ public class AuthenticationService {
         }
         Instant now = Instant.now();
         JwtClaimsSet.Builder claims = JwtClaimsSet.builder().issuer(issuer).subject(account.getUsername())
-            .audience(List.of("enrollment-api")).issuedAt(now).expiresAt(now.plusSeconds(900))
+            .audience(List.of("enrollment-api")).issuedAt(now).expiresAt(now.plusSeconds(TOKEN_LIFETIME_SECONDS))
             .claim("roles", List.of(account.getRole()));
         if (cnie != null) claims.claim("cnie", cnie).claim("student_id", account.getStudentId().toString());
         String token = encoder.encode(JwtEncoderParameters.from(
             JwsHeader.with(MacAlgorithm.HS256).build(), claims.build())).getTokenValue();
-        return new LoginResponse(token, 900, account.getRole(), cnie, account.getStudentId());
+        return new LoginResponse(token, TOKEN_LIFETIME_SECONDS, account.getRole(), cnie, account.getStudentId());
     }
 
     @Transactional

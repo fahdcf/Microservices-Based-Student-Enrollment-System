@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../../services/api-error';
 import { AuthService } from '../../services/auth.service';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -58,7 +59,7 @@ export class DashboardComponent implements OnInit {
         this.loading = false;
       },
       error: err => {
-        this.error = this.extractError(err);
+        this.error = apiErrorMessage(err);
         this.searched = true;
         this.loading = false;
       }
@@ -72,7 +73,7 @@ export class DashboardComponent implements OnInit {
         this.enrollments = this.enrollments.filter(e => e.enrollmentId !== enrollmentId);
       },
       error: err => {
-        this.error = this.extractError(err);
+        this.error = apiErrorMessage(err);
       }
     });
   }
@@ -82,14 +83,5 @@ export class DashboardComponent implements OnInit {
       year: 'numeric', month: 'short', day: 'numeric',
       hour: '2-digit', minute: '2-digit'
     });
-  }
-
-  private extractError(err: any): string {
-    if (!err?.error) return `Request failed (HTTP ${err?.status ?? 'unknown'}).`;
-    if (typeof err.error === 'string') return err.error;
-    if (err.error?.error) return err.error.error;
-    const entries = Object.entries(err.error);
-    if (entries.length) return entries.map(([k, v]) => `${k}: ${v}`).join(' | ');
-    return `Unexpected error (HTTP ${err.status}).`;
   }
 }

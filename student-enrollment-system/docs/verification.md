@@ -1,3 +1,33 @@
+# Simplification verification — 2 November 2026
+
+This entry applies to the simplification branch based on main at 0017925. The dated 30 October record below describes the earlier implementation.
+
+| Check | Result |
+| --- | --- |
+| Maven clean verify, then verify after final Java changes, TEST_DATABASES=true | PASS: all five services built; 28 tests, 0 failures/errors/skips |
+| Student / Course / Enrollment / HTTP client tests | 6 / 4 / 12 / 6 passed against PostgreSQL 17.9 where persistence is involved |
+| New race cases | PASS: simultaneous first-row creation, simultaneous duplicate creation, student and course closure before enrollment takes its lock |
+| Persisted profile/course updates | PASS: strengthened existing CRUD tests modify values and retrieve them in a subsequent HTTP request; both suites rerun successfully |
+| Cancellation / security / dependency failures | PASS: original boundary, JWT, ownership, direct-service and missing/unavailable dependency assertions retained |
+| Angular tests | PASS: 2 files, 4 tests |
+| Angular production build | PASS |
+| Applied Flyway SQL | Unchanged byte-for-byte in Git; validation passed on existing test schemas |
+| Application and test Compose configuration | PASS |
+| Fresh Docker Compose stack | PASS: all six application images built; five Java processes, Nginx and three separate PostgreSQL containers started with fresh volumes |
+| Fresh schema migrations | PASS: native Flyway/JPA startup in the fresh containers; existing reference-table mapping requires no new migration |
+| Java 17 runtime | PASS: application ran in the supplied eclipse-temurin:17-jre containers; local Maven used Java 21 targeting Java 17 |
+| Live scripts/smoke.mjs against Compose | PASS: Eureka registrations, Gateway CRUD/login/provisioning, direct-service 401s, role/ownership restrictions, enrollment/duplicates, deletion 409s, cancellation/double cancellation and eligible deletions |
+| Frontend integration | PASS: production HTML served by Nginx; authenticated /api traffic proxied to Gateway |
+| Working tree / migration / whitespace review | PASS; runtime secrets, build products and test databases excluded from the commit |
+
+Compose verification used project enrollment-simplification, fresh project-owned database volumes and random credentials stored only under ignored .local. A temporary ignored override exposed domain ports 18081–18083 to the smoke script; committed Compose still keeps domain ports private. The smoke check was run after discovery became ready; initial registry/cache warm-up is still expected. Test containers/volumes and the isolated native PostgreSQL test process were stopped afterward. The existing user PostgreSQL service and application databases were not touched.
+
+No tests were weakened or deleted. Removed stubs only covered the redundant second student GET; renamed mock calls follow the more explicit deletion-client names. New assertions verify actual dirty-checking persistence, and four additional parameterized cases exercise PostgreSQL concurrency.
+
+Browser visual/interaction checks and the remote GitHub Actions execution were not run for this refactoring. The HTTP smoke test validates the production frontend proxy, not rendered form interaction. Original JWT revocation/shared-secret, legacy timezone and cross-service partial-deletion limitations remain. See simplification-guide.md and README.
+
+---
+
 # Verification record — 30 October 2026
 
 ## Executed successfully
